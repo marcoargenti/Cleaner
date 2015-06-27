@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.InsertSetMoreStep;
 import org.jooq.InsertSetStep;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -67,26 +68,57 @@ public class StoreCleanData implements Runnable{
 		 
 	}
 
+//	private void insertDataFromList() {
+//		DSLContext database = DSL.using(destConn, SQLDialect.MYSQL);
+//		int i = 0;
+//		Iterator<Record> recordIterator = (Iterator<Record>) recordsList.iterator();
+////		database.execute("set foreign_key_checks=0");
+//		while(recordIterator.hasNext()){
+//			
+//			InsertSetStep<?> insert = database.insertInto(table); //NB: insert si fa per un record alla volta
+//			Record record= recordIterator.next();
+//			try{
+//			insert.set(record).execute();
+//			}catch(Exception e){
+////					e.printStackTrace();
+//				String recordValues = "";
+//				Field<?>[] fields =  record.fields();
+//				for(Field f: fields){
+//					recordValues += record.getValue(f) + " ";
+//				}
+//				System.err.println("Table: "+ table + " ; Field: "+recordValues + " ; Error: " +e.getMessage());
+//			}
+//			i++;
+//		}
+////		database.execute("set foreign_key_checks=1");
+//	}
+	
 	private void insertDataFromList() {
 		DSLContext database = DSL.using(destConn, SQLDialect.MYSQL);
 		int i = 0;
 		Iterator<Record> recordIterator = (Iterator<Record>) recordsList.iterator();
+//		database.execute("set foreign_key_checks=0");
+		InsertSetStep<?> insert = database.insertInto(table); //NB: insert si fa per un record alla volta
+		Record lastRecord = recordIterator.next();
 		while(recordIterator.hasNext()){
-			InsertSetStep<?> insert = database.insertInto(table); //NB: insert si fa per un record alla volta
-			Record record= recordIterator.next();
-			try{
-			insert.set(record).execute();
+			Record record = recordIterator.next();
+			insert = insert.set(record).newRecord();
+		}
+		insert.set(lastRecord).execute();
+		try{
+			
 			}catch(Exception e){
 //					e.printStackTrace();
-				String recordValues = "";
-				Field<?>[] fields =  record.fields();
-				for(Field f: fields){
-					recordValues += record.getValue(f) + " ";
-				}
-				System.err.println(recordValues);
+				System.err.println( e.getMessage() );
+//				String recordValues = "";
+//				Field<?>[] fields =  record.fields();
+//				for(Field f: fields){
+//					recordValues += record.getValue(f) + " ";
+//				}
+//				System.err.println("Table: "+ table + " ; Field: "+recordValues + " ; Error: " +e.getMessage());
 			}
 			i++;
-		}
+//		database.execute("set foreign_key_checks=1");
 	}
 
 	private void insertDataFromResult() {

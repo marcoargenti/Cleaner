@@ -136,7 +136,7 @@ public abstract class Cleaner {
 	 * @param insertIntoTable is the table where to insert records
 	 */
 	void storeCleanData(Table<?> insertIntoTable, Result<?> records){
-		final int INCREMENT_STEP = 10000;
+		final int INCREMENT_STEP = 5000;
 		int fromIndex, toIndex, tempIndex, maxIndex, lastIncrement;
 		maxIndex = records.size();
 		lastIncrement = maxIndex % INCREMENT_STEP;
@@ -146,7 +146,9 @@ public abstract class Cleaner {
 		List<List<?>> dataInputPerThread = new ArrayList();
 		fromIndex = 0;
 		toIndex = 0;
+		int i = 1;
 		while(fromIndex + INCREMENT_STEP < maxIndex){
+//			System.out.println(i + " started to store data"); i++;
 			toIndex = toIndex + INCREMENT_STEP;
 			List<?> resultListTemp = records.subList(fromIndex, toIndex);
 						

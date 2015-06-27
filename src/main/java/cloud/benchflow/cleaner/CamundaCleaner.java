@@ -46,16 +46,18 @@ public class CamundaCleaner extends DBCleaner {
 
 	public static void main(String[] args) {
 		String sourceUser = "root";
-		String sourcePassword = "root";
-		String sourceUrl = "jdbc:mysql://192.168.59.103:13011/process-engine";
+		String sourcePassword = "rawdb";
+		String sourceUrl = "jdbc:mysql://195.176.181.45:13011/process-engine";
 		String destUser = "root";
-		String destPassword = "root";
-		String destUrl = "jdbc:mysql://192.168.59.103:13000/CleanRawData";
+		String destPassword = "clean";
+		String destUrl = "jdbc:mysql://195.176.181.45:13000/CleanRawData";
 		String experimentID = "expProccessProva";
 		
+		for(int i = 0; i<5; i++){
 		CamundaCleaner cc = new CamundaCleaner(destUser, destPassword, destUrl, sourceUrl, sourceUser, sourcePassword, experimentID, 0);
 		
 		cc.clean();
+		}
 		
 	}
 	
@@ -85,6 +87,9 @@ public class CamundaCleaner extends DBCleaner {
 		
 //		Result<ConstructRecord> destConstructRecord = transformConstruct( sourceActivityRecord, ActHiActinst.ACT_HI_ACTINST );
 		Result<ConstructRecord> destConstructRecord = transformConstruct( sourceActivityRecord );
+		
+		date = new Date();
+		System.out.println( "Wait complition store Process" + dateFormat.format(date) );
 		
 		try {
 			threadProcess.join();
