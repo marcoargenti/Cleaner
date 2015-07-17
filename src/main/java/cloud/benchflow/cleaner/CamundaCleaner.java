@@ -46,27 +46,32 @@ public class CamundaCleaner extends DBCleaner {
 
 	public static void main(String[] args) {
 		String sourceUser = "root";
-		String sourcePassword = "rawdb";
-		String sourceUrl = "jdbc:mysql://195.176.181.45:13011/process-engine";
+		String sourcePassword = "root";
+//		String sourceUrl = "jdbc:mysql://195.176.181.45:13020/process-engine";
+		String sourceUrl = "jdbc:mysql://192.168.59.103:13011/process_engine";
 		String destUser = "root";
-		String destPassword = "clean";
-		String destUrl = "jdbc:mysql://195.176.181.45:13000/CleanRawData";
-		String experimentID = "expProccessProva";
+		String destPassword = "root";
+//		String destUrl = "jdbc:mysql://195.176.181.45:13000/CleanRawData";
+		String destUrl = "jdbc:mysql://192.168.59.103:13000/CleanRawData";
+		String experimentID = "exp20mila";
+		int repetition = 1;
 		
-		for(int i = 0; i<5; i++){
-		CamundaCleaner cc = new CamundaCleaner(destUser, destPassword, destUrl, sourceUrl, sourceUser, sourcePassword, experimentID, 0);
+		
+//		for(int i = 0; i<5; i++){
+		CamundaCleaner cc = new CamundaCleaner(destUser, destPassword, destUrl, sourceUrl, sourceUser, sourcePassword, experimentID, repetition);
 		
 		cc.clean();
-		}
+//		}
 		
 	}
 	
-	/**
-	 * clean method proceeds with the cleaning of the data regarding process instances and constructs. 
-	 * It consist of selection of raw data, transformation of raw data into clean data and storing of clean data.
-	 */
+	
+
 	void clean(){
-		
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd | HH:mm:ss.SSSSSS");
+		Date dateStartSelectCostruct, dateStartTransfCostruct, dateStartStoreCostruct;
+		Date dateEndSelectCostruct, dateEndTransfCostruct, dateEndStoreCostruct;
+
 		Thread threadProcess = new Thread() { 
 			@Override 
 			public void run() {
@@ -74,36 +79,51 @@ public class CamundaCleaner extends DBCleaner {
 			}
 		};
 		threadProcess.start();
-		
+
 		//start activity
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
-		Date date = new Date();
-		
-		System.out.println( "Start select Act" + dateFormat.format(date) );
+		dateStartSelectCostruct = new Date();
 		Result<ActHiActinstRecord> sourceActivityRecord = (Result<ActHiActinstRecord>) selectData( ActHiActinst.ACT_HI_ACTINST );
 		
-		date = new Date();
-		System.out.println( "Start transf Act" + dateFormat.format(date) );
-		
-//		Result<ConstructRecord> destConstructRecord = transformConstruct( sourceActivityRecord, ActHiActinst.ACT_HI_ACTINST );
+		dateStartTransfCostruct = new Date();
 		Result<ConstructRecord> destConstructRecord = transformConstruct( sourceActivityRecord );
-		
-		date = new Date();
-		System.out.println( "Wait complition store Process" + dateFormat.format(date) );
-		
+		dateEndTransfCostruct = new Date();
+
 		try {
 			threadProcess.join();
 		} catch (Exception e) {
 			System.err.println("Process error in thread");
 			e.printStackTrace();
 		}
-		//start store construct
-		date = new Date();
-		System.out.println( "Start store Construct" + dateFormat.format(date) );
+		dateStartStoreCostruct = new Date();
 		storeCleanData(Construct.CONSTRUCT, destConstructRecord);
+
+		dateEndStoreCostruct = new Date();
 		
-		date = new Date();
-		System.out.println( "End store Construct" + dateFormat.format(date) );
+		dateEndSelectCostruct = dateStartTransfCostruct;
+
+		System.out.println( "Start_select_Costruct |" + dateFormat.format(dateStartSelectCostruct) );
+		System.out.println( "End_select_Costruct |" + dateFormat.format(dateEndSelectCostruct) );
+		System.out.println( "Start_transf_Costruct |" + dateFormat.format(dateStartTransfCostruct) );
+		System.out.println( "End_transf_Costruct |" + dateFormat.format(dateEndTransfCostruct) );
+		System.out.println( "Start_store_Costruct |" + dateFormat.format(dateStartStoreCostruct) );
+		System.out.println( "End_store_Costruct |" + dateFormat.format(dateEndStoreCostruct) );
+		System.out.println( );
+		System.out.println("Numero_processi_dal_Source_DB | " + sourceActivityRecord.size() );
+		System.out.println("Numero_processi_per_Destination_DB | " + destConstructRecord.size() );
+		
+		long timeSelect = dateEndSelectCostruct.getTime() - dateStartSelectCostruct.getTime();
+		long timeTransf = dateEndTransfCostruct.getTime() - dateStartTransfCostruct.getTime();
+		long timeStore = dateEndStoreCostruct.getTime() - dateStartStoreCostruct.getTime();
+		
+		System.out.println("Dif constr select in ms | " + timeSelect);
+		System.out.println("Dif constr trasf in ms | " + timeTransf);
+		System.out.println("Dif constr store in ms | " + timeStore);
+		
+		double number = (double) destConstructRecord.size();
+		
+		System.out.println("Dif constr select in ms | " + number/timeSelect);
+		System.out.println("Dif constr trasf in ms | " + number/timeTransf);
+		System.out.println("Dif constr store in ms | " + number/timeStore);
 	}
 
 	/**
@@ -111,23 +131,115 @@ public class CamundaCleaner extends DBCleaner {
 	 * It consist of selection of raw data, transformation of raw data into clean data and storing of clean data.
 	 */
 	void treatProcess(){
-		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
-		Date date = new Date();
-		
-		System.out.println( "Start select Process" + dateFormat.format(date) );
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd | HH:mm:ss.SSSSSS");
+		Date dateStartSelectProcess, dateStartTransfProcess, dateStartStoreProcess;
+		Date dateEndSelectProcess, dateEndTransfProcess, dateEndStoreProcess;
+
+		dateStartSelectProcess = new Date();
 		Result<ActHiProcinstRecord> sourceProcessRecord = (Result<ActHiProcinstRecord>) selectData( ActHiProcinst.ACT_HI_PROCINST );
-		
-		date = new Date();
-		System.out.println( "Start transf Process" + dateFormat.format(date) );
+
+		dateStartTransfProcess = new Date();
 		Result<ProcessRecord> destProcessRecord = transformProcess( sourceProcessRecord );
-		
-		date = new Date();
-		System.out.println( "Start store Process" + dateFormat.format(date) );
+
+		dateStartStoreProcess = new Date();
 		storeCleanData(Process.PROCESS, destProcessRecord);
+		dateEndStoreProcess = new Date();
+
+		dateEndSelectProcess = dateStartTransfProcess;
+		dateEndTransfProcess = dateStartStoreProcess;
+
+		System.out.println( "Start_select_Process |" + dateFormat.format(dateStartSelectProcess) );
+		System.out.println( "End_select_Process |" + dateFormat.format(dateEndSelectProcess) );
+		System.out.println( "Start_transf_Process |" + dateFormat.format(dateStartTransfProcess) );
+		System.out.println( "End_transf_Process |" + dateFormat.format(dateEndTransfProcess) );
+		System.out.println( "Start_store_Process |" + dateFormat.format(dateStartStoreProcess) );
+		System.out.println( "End_store_Process |" + dateFormat.format(dateEndStoreProcess) );
+		System.out.println( );
+		System.out.println("Numero_processi_dal_Source_DB | " + sourceProcessRecord.size() );
+		System.out.println("Numero_processi_per_Destination_DB | " + destProcessRecord.size() );
 		
-		date = new Date();
-		System.out.println( "end Process" + dateFormat.format(date) );
+		long timeSelect = dateEndSelectProcess.getTime() - dateStartSelectProcess.getTime();
+		long timeTransf = dateEndTransfProcess.getTime() - dateStartTransfProcess.getTime();
+		long timeStore = dateEndStoreProcess.getTime() - dateStartStoreProcess.getTime();
+		
+		System.out.println("Dif proc select in ms | " + timeSelect);
+		System.out.println("Dif proc trasf in ms | " + timeTransf);
+		System.out.println("Dif proc store in ms | " + timeStore);
+		
+		double number = (double) destProcessRecord.size();
+		
+		System.out.println("Dif proc select in ms | " + number/timeSelect);
+		System.out.println("Dif proc trasf in ms | " + number/timeTransf);
+		System.out.println("Dif proc store in ms | " + number/timeStore);
 	}
+	
+//	/**
+//	 * clean method proceeds with the cleaning of the data regarding process instances and constructs. 
+//	 * It consist of selection of raw data, transformation of raw data into clean data and storing of clean data.
+//	 */
+//	void clean(){
+//		
+//		Thread threadProcess = new Thread() { 
+//			@Override 
+//			public void run() {
+//				treatProcess();
+//			}
+//		};
+//		threadProcess.start();
+//		
+//		//start activity
+//		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
+//		Date date = new Date();
+//		
+//		System.out.println( "Start select Act" + dateFormat.format(date) );
+//		Result<ActHiActinstRecord> sourceActivityRecord = (Result<ActHiActinstRecord>) selectData( ActHiActinst.ACT_HI_ACTINST );
+//		
+//		date = new Date();
+//		System.out.println( "Start transf Act" + dateFormat.format(date) );
+//		
+////		Result<ConstructRecord> destConstructRecord = transformConstruct( sourceActivityRecord, ActHiActinst.ACT_HI_ACTINST );
+//		Result<ConstructRecord> destConstructRecord = transformConstruct( sourceActivityRecord );
+//		
+//		date = new Date();
+//		System.out.println( "Wait complition store Process" + dateFormat.format(date) );
+//		
+//		try {
+//			threadProcess.join();
+//		} catch (Exception e) {
+//			System.err.println("Process error in thread");
+//			e.printStackTrace();
+//		}
+//		//start store construct
+//		date = new Date();
+//		System.out.println( "Start store Construct" + dateFormat.format(date) );
+//		storeCleanData(Construct.CONSTRUCT, destConstructRecord);
+//		
+//		date = new Date();
+//		System.out.println( "End store Construct" + dateFormat.format(date) );
+//	}
+//
+//	/**
+//	 * treatProcess method proceeds with the cleaning of the data regarding process instances. 
+//	 * It consist of selection of raw data, transformation of raw data into clean data and storing of clean data.
+//	 */
+//	void treatProcess(){
+//		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss.SSSSSS");
+//		Date date = new Date();
+//		
+//		System.out.println( "Start select Process" + dateFormat.format(date) );
+//		Result<ActHiProcinstRecord> sourceProcessRecord = (Result<ActHiProcinstRecord>) selectData( ActHiProcinst.ACT_HI_PROCINST );
+//		
+//		date = new Date();
+//		System.out.println( "Start transf Process" + dateFormat.format(date) );
+//		Result<ProcessRecord> destProcessRecord = transformProcess( sourceProcessRecord );
+//		
+//		date = new Date();
+//		System.out.println( "Start store Process" + dateFormat.format(date) );
+//		storeCleanData(Process.PROCESS, destProcessRecord);
+//		
+//		date = new Date();
+//		System.out.println( "end Process" + dateFormat.format(date) );
+//	}
 	
 //	/**
 //	 * treatActivity method proceeds with the cleaning of the data regarding construct. 
@@ -292,7 +404,7 @@ public class CamundaCleaner extends DBCleaner {
 				
 				recordToAdd.setValue(field, valueToStore);
 			}
-			recordToAdd.setValue(Process.PROCESS.TRIALID, trialID );
+			recordToAdd.setValue(Process.PROCESS.TRIALID, trialID ); //TODO also per construct
 			
 			ret.add( recordToAdd );
 		}

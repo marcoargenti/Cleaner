@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -136,7 +137,8 @@ public abstract class Cleaner {
 	 * @param insertIntoTable is the table where to insert records
 	 */
 	void storeCleanData(Table<?> insertIntoTable, Result<?> records){
-		final int INCREMENT_STEP = 5000;
+		final int INCREMENT_STEP = 1000;
+		
 		int fromIndex, toIndex, tempIndex, maxIndex, lastIncrement;
 		maxIndex = records.size();
 		lastIncrement = maxIndex % INCREMENT_STEP;
@@ -151,12 +153,29 @@ public abstract class Cleaner {
 //			System.out.println(i + " started to store data"); i++;
 			toIndex = toIndex + INCREMENT_STEP;
 			List<?> resultListTemp = records.subList(fromIndex, toIndex);
-						
+
 			dataInputPerThread.add(resultListTemp);
 			
-			StoreCleanData threadObject = new StoreCleanData(destDB.connectDB(), insertIntoTable, resultListTemp);
+			Connection conn = destDB.connectDB();
+//			try {
+//				while(!conn.isValid(0)){
+//					System.out.println("wait conn");
+//					Thread.sleep(1000);
+//					conn = destDB.connectDB();
+//				}
+//			} catch (SQLException e) {
+//				e.printStackTrace();
+//				conn = destDB.connectDB();
+//			}catch (InterruptedException e1) {
+//				e1.printStackTrace();
+//				conn = destDB.connectDB();
+//			}
+
+			
+			StoreCleanData threadObject = new StoreCleanData(conn , insertIntoTable, resultListTemp);
 			Thread thread = new Thread(threadObject);
 			thread.start();
+			
 			
 			threads.add(thread);
 			fromIndex += INCREMENT_STEP;
@@ -185,6 +204,77 @@ public abstract class Cleaner {
 		}
 		
 	}
+
+//	TODO delete
+//	void storeCleanData(Table<?> insertIntoTable, Result<?> records){
+//		storeCleanDataFromIndex(insertIntoTable, records, 0);
+//	}
+//	
+//	private void storeCleanDataFromIndex(Table<?> insertIntoTable, Result<?> records, int startIndexIncluded){
+//		final int INCREMENT_STEP = 1000;
+//		final int MAX_SIMULTANEOUS_THREAD_NUMBER = 30;
+//		
+//		int fromIndex, toIndex, tempIndex, maxIndex, lastIncrement;
+//		maxIndex = records.size();
+//		lastIncrement = maxIndex % INCREMENT_STEP;
+////		
+////		//if the record size might produce out of memory error, it is split
+////		if( (records.size()-startIndexIncluded)/INCREMENT_STEP > MAX_SIMULTANEOUS_THREAD_NUMBER){
+////			int startNextIndex = startIndexIncluded + 1 + (INCREMENT_STEP * MAX_SIMULTANEOUS_THREAD_NUMBER);
+////			maxIndex = startIndexIncluded + (INCREMENT_STEP * MAX_SIMULTANEOUS_THREAD_NUMBER);
+////			lastIncrement = maxIndex % INCREMENT_STEP;
+////			
+////			System.out.println(startNextIndex  + " maxIndex " + maxIndex + " lastIndex " + lastIncrement);
+////			storeCleanDataFromIndex(insertIntoTable, records, startNextIndex);
+////			
+////		};
+//		
+//
+//		List<Thread> threads = new ArrayList();
+//		
+//		List<List<?>> dataInputPerThread = new ArrayList();
+//		
+//		fromIndex = startIndexIncluded;
+//		toIndex = fromIndex;
+//		int i = 1;
+//		while(fromIndex + INCREMENT_STEP < maxIndex){
+////			System.out.println(i + " started to store data"); i++;
+//			toIndex = toIndex + INCREMENT_STEP;
+//			List<?> resultListTemp = records.subList(fromIndex, toIndex);
+//
+//			dataInputPerThread.add(resultListTemp);
+//			
+//			StoreCleanData threadObject = new StoreCleanData(destDB.connectDB(), insertIntoTable, resultListTemp);
+//			Thread thread = new Thread(threadObject);
+//			thread.start();
+//			
+//			threads.add(thread);
+//			fromIndex += INCREMENT_STEP;
+//		}
+//		{
+//			toIndex = maxIndex;
+//			List<?> resultListTemp = records.subList(fromIndex, toIndex);
+//
+//			dataInputPerThread.add(resultListTemp);
+//
+//			StoreCleanData threadObject = new StoreCleanData(destDB.connectDB(), insertIntoTable, resultListTemp);
+//			Thread thread = new Thread(threadObject);
+//			thread.start();
+//
+//			threads.add(thread);
+//		}
+//		
+//		Iterator<Thread> threadIterator = threads.iterator();
+//		while(threadIterator.hasNext()){
+//			Thread temp = threadIterator.next();
+//			try {
+//				temp.join();
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		
+//	}
 	
 //	String createIDByStrings(String[] strings){
 //		String input = null;

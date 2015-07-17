@@ -27,7 +27,7 @@ public class Process_engine extends org.jooq.impl.SchemaImpl {
 	 * No further instances allowed
 	 */
 	private Process_engine() {
-		super("process-engine");
+		super("process_engine");
 	}
 
 	@Override
